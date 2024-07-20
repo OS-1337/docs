@@ -1,32 +1,42 @@
-name: Deploy to GitHub Pages
+name: GitHub Pages Overwriter
+# Source: https://github.com/marketplace/actions/github-pages-overwriter
 
 on:
   push:
     branches:
-      - main  # replace with your branch
+      # NOTE: You may want to limit the trigger branch to be "main" or "master" etc.
+      - '*'
 
 jobs:
-  deploy:
+  publish:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Check out
+        # You may use a newer version of https://github.com/actions/checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Generate your content
+        run: mkdocs build
+
+      - name: Publish current workdir (which contains generated content) to GitHub Pages
+        uses: rayluo/github-pages-overwriter@v1.3
+
         with:
-          python-version: 3.8
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install mkdocs
+          # Optional.
+          #
+          # Default value "." means the root directory of your project will be published.
+          #
+          # You can use whatever directory your project uses,
+          # for example "wwwroot" (without leading "./").
+          # Such a directory does *not* have to already exist in your repo,
+          # it could be an output directory created dynamically
+          # by your static website builder.
+          source-directory: site
 
-      - name: Build site
-        run: mkdocs build --verbose --clean --strict
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site  # replace with your build output directory
+          # Optional. Default value "gh-pages".
+          # It specifies the temporary branch which hosts the static website.
+          # Each build will OVERWRITE this branch.
+          target-branch: gh-pages
